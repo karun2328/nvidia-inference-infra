@@ -1,0 +1,59 @@
+replicaCount: 1
+
+image:
+  repository: nvcr.io/nvidia/tritonserver
+  tag: "24.08-trtllm-python-py3"
+  pullPolicy: IfNotPresent
+
+model:
+  repositoryPath: "/models"
+  name: "ensemble"
+
+serving:
+  httpPort: 8000
+  grpcPort: 8001
+  metricsPort: 8002
+
+resources:
+  limits:
+    nvidia.com/gpu: 1
+    cpu: "4"
+    memory: "16Gi"
+  requests:
+    nvidia.com/gpu: 1
+    cpu: "2"
+    memory: "8Gi"
+service:
+  type: ClusterIP
+  httpPort: 8000
+  grpcPort: 8001
+  metricsPort: 8002
+
+modelRepository:
+  storageType: "pvc"
+  pvcSize: "50Gi"
+  storageClass: "standard"
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 4
+  metrics:
+    - type: custom
+      name: "triton_queue_compute"
+      targetAverageValue: 5
+
+tolerations:
+  - key: "nvidia.com/gpu"
+    operator: "Equal"
+    value: "present"
+    effect: "NoSchedule"
+
+nodeSelector:
+  role: inference
+
+canary:
+  enabled: false
+  weight: 20
+  currentTag: "24.08-trtllm-python-py3"
+  canaryTag: "24.09-trtllm-python-py3"

@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "triton-inference.fullname" . }}
+  labels:
+    {{- include "triton-inference.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "triton-inference.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "triton-inference.labels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.serving.httpPort }}
+              protocol: TCP
+            - name: grpc
+              containerPort: {{ .Values.serving.grpcPort }}
+              protocol: TCP
+            - name: metrics
+              containerPort: {{ .Values.serving.metricsPort }}
+              protocol: TCP
+          args:
+            - "tritonserver"
+            - "--model-repository={{ .Values.model.repositoryPath }}"
+            - "--http-port={{ .Values.serving.httpPort }}"
+            - "--grpc-port={{ .Values.serving.grpcPort }}"
+            - "--metrics-port={{ .Values.serving.metricsPort }}"
+            - "--allow-metrics=true"
+            - "--allow-gpu-metrics=true"
+            - "--log-verbose=0"
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              path: /v2/health/ready
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /v2/health/live
+              port: http
+            initialDelaySeconds: 120
+            periodSeconds: 30
+          volumeMounts:
+            - name: model-repository
+              mountPath: {{ .Values.model.repositoryPath }}
+      volumes:
+        - name: model-repository
+          persistentVolumeClaim:
+            claimName: {{ include "triton-inference.fullname" . }}-models
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
