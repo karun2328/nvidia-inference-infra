@@ -6,13 +6,15 @@ variable "project_id" {
 variable "region" {
   description = "GCP region"
   type        = string
-  default     = "us-central1"
+  default     = "us-west4"
 }
-variable "region" {
-  description = "GCP region"
+
+variable "zone" {
+  description = "GCP zone"
   type        = string
-  default     = "us-west1" # Changes the region to Oregon
+  default     = "us-west4-a"
 }
+
 variable "cluster_name" {
   description = "GKE cluster name"
   type        = string
@@ -28,8 +30,9 @@ variable "gpu_node_count" {
 variable "gpu_type" {
   description = "NVIDIA GPU type"
   type        = string
-  default     = "nvidia-tesla-t4"
+  default     = "nvidia-l4"
 }
+
 variable "gpu_count" {
   description = "Number of GPUs per node"
   type        = number
@@ -39,5 +42,5 @@ variable "gpu_count" {
 variable "machine_type" {
   description = "GCE machine type for GPU nodes"
   type        = string
-  default     = "n1-standard-4"
+  default     = "g2-standard-4"
 }
